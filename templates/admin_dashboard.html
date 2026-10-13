@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - Smart Student Attendance System{% endblock %}
+{% block header_title %}College Admin Overview{% endblock %}
+{% block header_subtitle %}Real-time campus statistics and student attendance monitoring{% endblock %}
+
+{% block content %}
+<!-- Stat Metric Cards -->
+<div class="grid-cols-4">
+  <div class="stat-card stat-info">
+    <div class="stat-details">
+      <div class="stat-label">Total Faculties</div>
+      <div class="stat-value">{{ stats.total_faculties }}</div>
+      <div class="stat-trend">
+        <span>Active faculty members</span>
+      </div>
+    </div>
+    <div class="stat-icon">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-details">
+      <div class="stat-label">Total Students</div>
+      <div class="stat-value">{{ stats.total_students }}</div>
+      <div class="stat-trend">
+        <span>Enrolled student database</span>
+      </div>
+    </div>
+    <div class="stat-icon">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+    </div>
+  </div>
+
+  <div class="stat-card stat-warning">
+    <div class="stat-details">
+      <div class="stat-label">Total Classes</div>
+      <div class="stat-value">{{ stats.total_classes }}</div>
+      <div class="stat-trend">
+        <span>Distinct class sections</span>
+      </div>
+    </div>
+    <div class="stat-icon">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg>
+    </div>
+  </div>
+
+  <div class="stat-card stat-success">
+    <div class="stat-details">
+      <div class="stat-label">Today's Attendance</div>
+      <div class="stat-value">{{ stats.today_percentage }}%</div>
+      <div class="stat-trend">
+        <span>{{ stats.today_present }} present / {{ stats.today_absent }} absent</span>
+      </div>
+    </div>
+    <div class="stat-icon">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+    </div>
+  </div>
+</div>
+
+<!-- Charts Row 1: Daily Trends & Class-wise Attendance -->
+<div class="grid-cols-2">
+  <div class="chart-card">
+    <div class="card-header">
+      <div>
+        <h3 class="card-title">Daily Attendance Trend (Last 7 Days)</h3>
+        <p class="card-subtitle">Student attendance count across the past week</p>
+      </div>
+      <span class="badge badge-primary">Daily Count</span>
+    </div>
+    <div class="chart-wrapper">
+      <canvas id="dailyTrendChart"></canvas>
+    </div>
+  </div>
+
+  <div class="chart-card">
+    <div class="card-header">
+      <div>
+        <h3 class="card-title">Class-Wise Attendance Today</h3>
+        <p class="card-subtitle">Percentage turnout grouped by department & section</p>
+      </div>
+      <span class="badge badge-success">Today's %</span>
+    </div>
+    <div class="chart-wrapper">
+      <canvas id="classWiseChart"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- Charts Row 2: Monthly Attendance & Recent Activities Panel -->
+<div class="grid-cols-3-1">
+  <!-- Recent Activities Panel -->
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <h3 class="card-title">Recent Attendance Activities</h3>
+        <p class="card-subtitle">Latest QR check-ins recorded across departments</p>
+      </div>
+      <a href="{{ url_for('admin.attendance') }}" class="btn btn-outline btn-sm">View All Logs</a>
+    </div>
+
+    <div class="table-container">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Student</th>
+            <th>Department</th>
+            <th>Class</th>
+            <th>Time</th>
+            <th>Marked By</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for act in stats.recent_activities %}
+            <tr>
+              <td>
+                <strong>{{ act.student_name }}</strong>
+                <div style="font-size: 11px; color: var(--text-muted);">{{ act.student_id }}</div>
+              </td>
+              <td>{{ act.department }}</td>
+              <td>{{ act.year }} ({{ act.section }})</td>
+              <td>{{ act.time }}</td>
+              <td>{{ act.faculty_name or 'Faculty' }}</td>
+              <td><span class="badge badge-success">{{ act.status }}</span></td>
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 30px;">
+                No attendance activity recorded yet today.
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Monthly Attendance Overview -->
+  <div class="chart-card">
+    <div class="card-header">
+      <div>
+        <h3 class="card-title">Monthly Turnout</h3>
+        <p class="card-subtitle">Presences recorded per month</p>
+      </div>
+    </div>
+    <div class="chart-wrapper">
+      <canvas id="monthlyTrendChart"></canvas>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    // 1. Daily Trend Line Chart
+    const dailyLabels = {{ stats.daily_trends | map(attribute='label') | list | tojson }};
+    const dailyData = {{ stats.daily_trends | map(attribute='count') | list | tojson }};
+    AttendanceCharts.drawLineChart('dailyTrendChart', dailyLabels, dailyData, {
+      color: '#2563eb',
+      unit: ' students'
+    });
+
+    // 2. Class-Wise Bar Chart
+    const classLabels = {{ stats.class_attendance | map(attribute='label') | list | tojson }};
+    const classData = {{ stats.class_attendance | map(attribute='percentage') | list | tojson }};
+    AttendanceCharts.drawBarChart('classWiseChart', classLabels, classData, {
+      color: '#10b981',
+      unit: '%'
+    });
+
+    // 3. Monthly Trend Bar Chart
+    const monthlyLabels = {{ stats.monthly_trends | map(attribute='label') | list | tojson }};
+    const monthlyData = {{ stats.monthly_trends | map(attribute='count') | list | tojson }};
+    AttendanceCharts.drawBarChart('monthlyTrendChart', monthlyLabels, monthlyData, {
+      color: '#3b82f6',
+      unit: ''
+    });
+  });
+</script>
+{% endblock %}

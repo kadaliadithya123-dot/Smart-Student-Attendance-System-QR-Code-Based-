@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}Faculty Dashboard - Smart Student Attendance System{% endblock %}
+{% block header_title %}Faculty Portal{% endblock %}
+{% block header_subtitle %}Welcome back, {{ faculty.name }} - {{ faculty.department }}{% endblock %}
+
+{% block content %}
+<!-- Quick Action Navigation Bar -->
+<div class="card" style="padding: 16px 24px; margin-bottom: 24px;">
+  <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between;">
+    <div style="font-weight: 700; color: var(--text-main); font-size: 15px;">
+      Quick Actions
+    </div>
+    <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+      <a href="{{ url_for('faculty.scanner') }}" class="btn btn-primary">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7V5a2 2 0 0 1 2-2h2"></path><path d="M17 3h2a2 2 0 0 1 2 2v2"></path><path d="M21 17v2a2 2 0 0 1-2 2h-2"></path><path d="M7 21H5a2 2 0 0 1-2-2v-2"></path><line x1="7" y1="12" x2="17" y2="12"></line></svg>
+        Launch QR Scanner
+      </a>
+      <a href="{{ url_for('faculty.register_student') }}" class="btn btn-outline">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
+        Register Student
+      </a>
+      <a href="{{ url_for('faculty.students') }}" class="btn btn-outline">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>
+        Students Directory
+      </a>
+      <a href="{{ url_for('faculty.attendance') }}" class="btn btn-outline">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line></svg>
+        Attendance
+      </a>
+      <a href="{{ url_for('faculty.reports') }}" class="btn btn-outline">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+        Reports
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- Faculty Metric Cards -->
+<div class="grid-cols-4">
+  <div class="stat-card stat-info">
+    <div class="stat-details">
+      <div class="stat-label">Total Registered Students</div>
+      <div class="stat-value">{{ stats.total_students }}</div>
+      <div class="stat-trend"><span>Across departments</span></div>
+    </div>
+    <div class="stat-icon">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>
+    </div>
+  </div>
+
+  <div class="stat-card stat-success">
+    <div class="stat-details">
+      <div class="stat-label">Today's Present</div>
+      <div class="stat-value">{{ stats.present_count }}</div>
+      <div class="stat-trend"><span>Marked present today</span></div>
+    </div>
+    <div class="stat-icon">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+    </div>
+  </div>
+
+  <div class="stat-card stat-danger">
+    <div class="stat-details">
+      <div class="stat-label">Today's Absent</div>
+      <div class="stat-value">{{ stats.absent_count }}</div>
+      <div class="stat-trend"><span>Not yet checked in</span></div>
+    </div>
+    <div class="stat-icon">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+    </div>
+  </div>
+
+  <div class="stat-card stat-warning">
+    <div class="stat-details">
+      <div class="stat-label">Attendance Percentage</div>
+      <div class="stat-value">{{ stats.percentage }}%</div>
+      <div class="stat-trend"><span>Overall daily rate</span></div>
+    </div>
+    <div class="stat-icon">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+    </div>
+  </div>
+</div>
+
+<!-- Faculty Today's Attendance Table -->
+<div class="card">
+  <div class="card-header">
+    <div>
+      <h3 class="card-title">Today's Scanned Check-ins</h3>
+      <p class="card-subtitle">Real-time attendance entries captured today</p>
+    </div>
+    <a href="{{ url_for('faculty.scanner') }}" class="btn btn-primary btn-sm">
+      + Open Live Scanner
+    </a>
+  </div>
+
+  <div class="table-container">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Student ID</th>
+          <th>Student Name</th>
+          <th>Department</th>
+          <th>Class & Section</th>
+          <th>Check-in Time</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for scan in stats.recent_scans %}
+          <tr>
+            <td><strong>{{ scan.student_id }}</strong></td>
+            <td>{{ scan.student_name }}</td>
+            <td>{{ scan.department }}</td>
+            <td>{{ scan.year }} - Sec {{ scan.section }}</td>
+            <td>{{ scan.time }}</td>
+            <td><span class="badge badge-success">{{ scan.status }}</span></td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 32px;">
+              No check-ins recorded yet today. Click "Launch QR Scanner" to begin attendance marking.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

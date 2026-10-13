@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Attendance Reports - Smart Student Attendance System{% endblock %}
+{% block header_title %}Attendance Reports & CSV Export{% endblock %}
+{% block header_subtitle %}Generate daily, weekly, or monthly attendance sheets with one-click CSV export{% endblock %}
+
+{% block content %}
+<div class="card">
+  <!-- Report Type & Filters Form -->
+  <form method="GET" class="toolbar">
+    <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+      <div class="form-group" style="margin-bottom: 0;">
+        <label class="form-label" style="font-size: 11px;">Report Horizon</label>
+        <select name="type" class="form-control" style="width: auto;">
+          <option value="daily" {% if report_type == 'daily' %}selected{% endif %}>Daily Report</option>
+          <option value="weekly" {% if report_type == 'weekly' %}selected{% endif %}>Weekly Report (7 Days)</option>
+          <option value="monthly" {% if report_type == 'monthly' %}selected{% endif %}>Monthly Report</option>
+        </select>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 0;">
+        <label class="form-label" style="font-size: 11px;">Target Date</label>
+        <input type="date" name="date" class="form-control" style="width: auto;" value="{{ target_date }}">
+      </div>
+
+      <div class="form-group" style="margin-bottom: 0;">
+        <label class="form-label" style="font-size: 11px;">Department</label>
+        <select name="department" class="form-control" style="width: auto; min-width: 170px;">
+          <option value="">All Departments</option>
+          {% for d in filters.departments %}
+            <option value="{{ d }}" {% if department == d %}selected{% endif %}>{{ d }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div style="align-self: flex-end; display: flex; gap: 8px;">
+        <button type="submit" class="btn btn-primary btn-sm">Generate Report</button>
+        <a href="{{ url_for(request.endpoint) }}" class="btn btn-outline btn-sm">Reset</a>
+      </div>
+    </div>
+
+    <!-- Export CSV Button -->
+    <div>
+      <a 
+        href="{{ url_for('admin.export_csv' if user_role == 'admin' else 'faculty.export_csv', type=report_type, date=target_date, department=department) }}" 
+        class="btn btn-success"
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+        Download CSV Export
+      </a>
+    </div>
+  </form>
+
+  <!-- Report Scope Badge -->
+  <div style="padding: 12px 18px; background-color: var(--bg-main); border-radius: var(--radius-sm); border: 1px solid var(--border); margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+    <div>
+      <span style="font-weight: 700; text-transform: uppercase; font-size: 12px; color: var(--primary);">
+        {{ report_type }} Attendance Summary:
+      </span>
+      <span style="font-size: 13px; margin-left: 6px; color: var(--text-main);">
+        Range: <strong>{{ start_date }}</strong> to <strong>{{ end_date }}</strong>
+        {% if department %} | Department: <strong>{{ department }}</strong>{% endif %}
+      </span>
+    </div>
+    <span class="badge badge-primary">{{ records | length }} Records Found</span>
+  </div>
+
+  <!-- Report Table -->
+  <div class="table-container">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Student ID</th>
+          <th>Student Name</th>
+          <th>Department</th>
+          <th>Class & Section</th>
+          <th>Date</th>
+          <th>Time</th>
+          <th>Marked By</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in records %}
+          <tr>
+            <td><code>#{{ r.attendance_id }}</code></td>
+            <td><strong>{{ r.student_id }}</strong></td>
+            <td>{{ r.student_name }}</td>
+            <td><span class="badge badge-primary">{{ r.department }}</span></td>
+            <td>{{ r.year }} (Sec {{ r.section }})</td>
+            <td>{{ r.date }}</td>
+            <td>{{ r.time }}</td>
+            <td>{{ r.faculty_name or 'Faculty' }}</td>
+            <td><span class="badge badge-success">{{ r.status }}</span></td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="9" style="text-align: center; color: var(--text-muted); padding: 36px;">
+              No attendance records recorded for this selected time window.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

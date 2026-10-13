@@ -1,0 +1,297 @@
+{% extends "base.html" %}
+
+{% block title %}Student Records - Smart Student Attendance System{% endblock %}
+{% block header_title %}Student Records{% endblock %}
+{% block header_subtitle %}Complete registry of enrolled students, academic classes, and QR identifiers{% endblock %}
+
+{% block content %}
+<div class="card">
+  <!-- Search & Filters Toolbar -->
+  <form method="GET" class="toolbar">
+    <div class="search-box">
+      <span class="search-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      </span>
+      <input 
+        type="text" 
+        name="search" 
+        class="form-control" 
+        placeholder="Search by ID, name, email..." 
+        value="{{ selected_search or '' }}"
+      >
+    </div>
+
+    <div class="filters-group">
+      <select name="department" class="form-control" style="width: auto; min-width: 170px;">
+        <option value="">All Departments</option>
+        {% for d in filters.departments %}
+          <option value="{{ d }}" {% if selected_dept == d %}selected{% endif %}>{{ d }}</option>
+        {% endfor %}
+      </select>
+
+      <select name="year" class="form-control" style="width: auto; min-width: 130px;">
+        <option value="">All Years</option>
+        {% for y in filters.years %}
+          <option value="{{ y }}" {% if selected_year == y %}selected{% endif %}>{{ y }}</option>
+        {% endfor %}
+      </select>
+
+      <select name="section" class="form-control" style="width: auto; min-width: 120px;">
+        <option value="">All Sections</option>
+        {% for s in filters.sections %}
+          <option value="{{ s }}" {% if selected_sec == s %}selected{% endif %}>Sec {{ s }}</option>
+        {% endfor %}
+      </select>
+
+      <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+      <a href="{{ url_for(request.endpoint) }}" class="btn btn-outline btn-sm">Reset</a>
+
+      {% if user_role == 'faculty' %}
+        <a href="{{ url_for('faculty.register_student') }}" class="btn btn-success btn-sm" style="margin-left: 8px;">
+          + Register Student
+        </a>
+      {% endif %}
+    </div>
+  </form>
+
+  <!-- Students Table -->
+  <div class="table-container">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Student</th>
+          <th>Department</th>
+          <th>Academic Class</th>
+          <th>Contact & Parent</th>
+          <th>QR Badge</th>
+          <th style="text-align: right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for stu in students %}
+          <tr>
+            <td>
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <img 
+                  src="{{ url_for('static', filename='uploads/' + stu.photo) if stu.photo != 'default_avatar.png' else url_for('static', filename='images/default_avatar.png') }}" 
+                  alt="{{ stu.name }}" 
+                  class="table-avatar"
+                  onerror="this.src='{{ url_for('static', filename='images/default_avatar.png') }}';"
+                >
+                <div>
+                  <strong>{{ stu.name }}</strong>
+                  <div style="font-size: 11px; color: var(--text-muted);">
+                    <code>{{ stu.student_id }}</code> • {{ stu.email }}
+                  </div>
+                </div>
+              </div>
+            </td>
+            <td><span class="badge badge-primary">{{ stu.department }}</span></td>
+            <td>{{ stu.year }} ({{ stu.semester }} - Sec {{ stu.section }})</td>
+            <td>
+              <div>{{ stu.phone }}</div>
+              <div style="font-size: 11px; color: var(--text-muted);">Parent: {{ stu.parent_phone }}</div>
+            </td>
+            <td>
+              <a href="{{ url_for('static', filename='qr_codes/' + stu.qr_code) }}" target="_blank" title="View / Print QR Code">
+                <img 
+                  src="{{ url_for('static', filename='qr_codes/' + stu.qr_code) }}" 
+                  alt="QR" 
+                  style="width: 38px; height: 38px; border-radius: 4px; border: 1px solid var(--border);"
+                >
+              </a>
+            </td>
+            <td style="text-align: right;">
+              <div style="display: inline-flex; gap: 6px;">
+                <button 
+                  class="btn btn-outline btn-sm"
+                  onclick="viewStudentProfile({{ stu | tojson }})"
+                >
+                  View
+                </button>
+
+                {% if user_role == 'faculty' %}
+                  <button 
+                    class="btn btn-outline btn-sm"
+                    onclick="openEditStudentModal({{ stu | tojson }})"
+                  >
+                    Edit
+                  </button>
+                  <form action="{{ url_for('faculty.delete_student', student_id=stu.student_id) }}" method="POST" onsubmit="return confirm('Delete student {{ stu.name }}? This will remove all their attendance logs.');" style="display: inline;">
+                    <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                  </form>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 36px;">
+              No students found matching the selected search and filter criteria.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal 1: View Student Profile -->
+<div id="viewStudentModal" class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3>Student Profile Details</h3>
+      <button class="alert-close" onclick="closeModal('viewStudentModal')">&times;</button>
+    </div>
+    <div class="modal-body" id="studentModalBody">
+      <!-- Populated dynamically via JS -->
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-primary" onclick="closeModal('viewStudentModal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal 2: Edit Student (Faculty) -->
+{% if user_role == 'faculty' %}
+<div id="editStudentModal" class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3>Edit Student Details</h3>
+      <button class="alert-close" onclick="closeModal('editStudentModal')">&times;</button>
+    </div>
+    <form id="editStudentForm" method="POST" enctype="multipart/form-data">
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Student ID (Read-only)</label>
+            <input type="text" id="editStuId" class="form-control" readonly>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Full Name *</label>
+            <input type="text" name="name" id="editStuName" class="form-control" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Department *</label>
+            <input type="text" name="department" id="editStuDept" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Academic Year *</label>
+            <input type="text" name="year" id="editStuYear" class="form-control" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Semester *</label>
+            <input type="text" name="semester" id="editStuSem" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Section *</label>
+            <input type="text" name="section" id="editStuSec" class="form-control" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Phone *</label>
+            <input type="tel" name="phone" id="editStuPhone" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Parent Phone *</label>
+            <input type="tel" name="parent_phone" id="editStuParentPhone" class="form-control" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Email / Gmail *</label>
+            <input type="email" name="email" id="editStuEmail" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Username</label>
+            <input type="text" name="username" id="editStuUsername" class="form-control">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">New Password (leave blank to keep current)</label>
+            <input type="password" name="password" class="form-control">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Update Passport Photo</label>
+            <input type="file" name="photo" class="form-control" accept="image/*">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" onclick="closeModal('editStudentModal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  function viewStudentProfile(stu) {
+    const avatarUrl = stu.photo && stu.photo !== 'default_avatar.png'
+      ? `/static/uploads/${stu.photo}`
+      : `/static/images/default_avatar.png`;
+    const qrUrl = `/static/qr_codes/${stu.qr_code}`;
+
+    const body = document.getElementById('studentModalBody');
+    body.innerHTML = `
+      <div style="display: flex; gap: 20px; align-items: center; margin-bottom: 20px;">
+        <img src="${avatarUrl}" alt="${stu.name}" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary);" onerror="this.src='/static/images/default_avatar.png';">
+        <div>
+          <h3 style="margin: 0; font-size: 20px;">${stu.name}</h3>
+          <span class="badge badge-primary" style="margin-top: 4px;">ID: ${stu.student_id}</span>
+          <div style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">${stu.department}</div>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; font-size: 13px; margin-bottom: 20px;">
+        <div><strong>Academic Year:</strong> ${stu.year}</div>
+        <div><strong>Semester:</strong> ${stu.semester}</div>
+        <div><strong>Section:</strong> ${stu.section}</div>
+        <div><strong>Username:</strong> ${stu.username}</div>
+        <div><strong>Email:</strong> ${stu.email}</div>
+        <div><strong>Phone:</strong> ${stu.phone}</div>
+        <div><strong>Parent Phone:</strong> ${stu.parent_phone}</div>
+        <div><strong>Enrolled Date:</strong> ${stu.created_at || 'Active'}</div>
+      </div>
+
+      <div style="text-align: center; padding-top: 16px; border-top: 1px solid var(--border);">
+        <div style="font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 8px;">Unique Student QR Code:</div>
+        <img src="${qrUrl}" alt="QR Code" style="width: 140px; height: 140px; border: 4px solid #fff; box-shadow: var(--shadow-md); border-radius: 8px;">
+      </div>
+    `;
+    openModal('viewStudentModal');
+  }
+
+  function openEditStudentModal(stu) {
+    document.getElementById('editStuId').value = stu.student_id;
+    document.getElementById('editStuName').value = stu.name;
+    document.getElementById('editStuDept').value = stu.department;
+    document.getElementById('editStuYear').value = stu.year;
+    document.getElementById('editStuSem').value = stu.semester;
+    document.getElementById('editStuSec').value = stu.section;
+    document.getElementById('editStuPhone').value = stu.phone;
+    document.getElementById('editStuParentPhone').value = stu.parent_phone;
+    document.getElementById('editStuEmail').value = stu.email;
+    document.getElementById('editStuUsername').value = stu.username;
+
+    const form = document.getElementById('editStudentForm');
+    form.action = `/faculty/students/edit/${stu.student_id}`;
+
+    openModal('editStudentModal');
+  }
+</script>
+{% endblock %}

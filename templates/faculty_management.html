@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+
+{% block title %}Faculty Management - Smart Student Attendance System{% endblock %}
+{% block header_title %}Faculty Management{% endblock %}
+{% block header_subtitle %}Add, update, or remove faculty members and configure teaching credentials{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="toolbar">
+    <div>
+      <h3 class="card-title">Registered Faculty Directory</h3>
+      <p class="card-subtitle">Manage faculty staff profiles and credentials</p>
+    </div>
+    <button class="btn btn-primary" onclick="openModal('addFacultyModal')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+      Add New Faculty
+    </button>
+  </div>
+
+  <div class="table-container">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Faculty ID</th>
+          <th>Faculty Name</th>
+          <th>Department</th>
+          <th>Email Address</th>
+          <th>Phone Number</th>
+          <th>Username</th>
+          <th style="text-align: right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for fac in faculties %}
+          <tr>
+            <td><strong>{{ fac.faculty_id }}</strong></td>
+            <td>{{ fac.name }}</td>
+            <td><span class="badge badge-primary">{{ fac.department }}</span></td>
+            <td>{{ fac.email }}</td>
+            <td>{{ fac.phone }}</td>
+            <td><code>{{ fac.username }}</code></td>
+            <td style="text-align: right;">
+              <div style="display: inline-flex; gap: 8px;">
+                <button 
+                  class="btn btn-outline btn-sm"
+                  onclick="openEditFacultyModal({{ fac | tojson }})"
+                >
+                  Edit
+                </button>
+                <form action="{{ url_for('admin.delete_faculty', faculty_id=fac.faculty_id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete faculty member {{ fac.name }}?');" style="display: inline;">
+                  <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 32px;">
+              No faculty members found. Click "Add New Faculty" to register one.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal 1: Add New Faculty -->
+<div id="addFacultyModal" class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3>Register New Faculty</h3>
+      <button class="alert-close" onclick="closeModal('addFacultyModal')">&times;</button>
+    </div>
+    <form action="{{ url_for('admin.add_faculty') }}" method="POST">
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Faculty ID *</label>
+            <input type="text" name="faculty_id" class="form-control" placeholder="e.g. FAC004" required style="text-transform: uppercase;">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Faculty Full Name *</label>
+            <input type="text" name="name" class="form-control" placeholder="e.g. Dr. Rajesh Kumar" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Department *</label>
+            <input type="text" name="department" class="form-control" placeholder="e.g. Computer Science" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email Address *</label>
+            <input type="email" name="email" class="form-control" placeholder="faculty@niet.edu" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Phone Number *</label>
+            <input type="tel" name="phone" class="form-control" placeholder="+91 9876543210" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Username *</label>
+            <input type="text" name="username" class="form-control" placeholder="e.g. rajesh_fac" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Password *</label>
+          <input type="password" name="password" class="form-control" placeholder="Account password" required minlength="4">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" onclick="closeModal('addFacultyModal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Faculty</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal 2: Edit Faculty -->
+<div id="editFacultyModal" class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3>Edit Faculty Details</h3>
+      <button class="alert-close" onclick="closeModal('editFacultyModal')">&times;</button>
+    </div>
+    <form id="editFacultyForm" method="POST">
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Faculty ID (Read-only)</label>
+            <input type="text" id="editFacultyId" class="form-control" readonly>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Faculty Full Name *</label>
+            <input type="text" name="name" id="editFacultyName" class="form-control" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Department *</label>
+            <input type="text" name="department" id="editFacultyDept" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email Address *</label>
+            <input type="email" name="email" id="editFacultyEmail" class="form-control" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Phone Number *</label>
+            <input type="tel" name="phone" id="editFacultyPhone" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Username *</label>
+            <input type="text" name="username" id="editFacultyUsername" class="form-control" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">New Password (leave blank to keep unchanged)</label>
+          <input type="password" name="password" class="form-control" placeholder="Enter new password if changing">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" onclick="closeModal('editFacultyModal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Update Details</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  function openEditFacultyModal(faculty) {
+    document.getElementById('editFacultyId').value = faculty.faculty_id;
+    document.getElementById('editFacultyName').value = faculty.name;
+    document.getElementById('editFacultyDept').value = faculty.department;
+    document.getElementById('editFacultyEmail').value = faculty.email;
+    document.getElementById('editFacultyPhone').value = faculty.phone;
+    document.getElementById('editFacultyUsername').value = faculty.username;
+
+    const form = document.getElementById('editFacultyForm');
+    form.action = `/admin/faculties/edit/${faculty.faculty_id}`;
+
+    openModal('editFacultyModal');
+  }
+</script>
+{% endblock %}

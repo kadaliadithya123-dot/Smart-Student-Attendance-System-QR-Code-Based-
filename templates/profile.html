@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block title %}Profile Settings - Smart Student Attendance System{% endblock %}
+{% block header_title %}Profile Settings{% endblock %}
+{% block header_subtitle %}View and update your personal details, credentials, and profile image{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 800px; margin: 0 auto;">
+  <div class="card-header">
+    <div>
+      <h3 class="card-title">
+        {% if user_role == 'admin' %}
+          Principal / Administrator Profile
+        {% elif user_role == 'student' %}
+          Student Profile Settings
+        {% else %}
+          Faculty Profile Settings
+        {% endif %}
+      </h3>
+      <p class="card-subtitle">Keep your contact information up to date</p>
+    </div>
+  </div>
+
+  <form method="POST" enctype="multipart/form-data">
+    <div style="display: flex; gap: 24px; align-items: center; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid var(--border);">
+      <img 
+        src="{{ url_for('static', filename='uploads/' + user.photo) if user.photo and user.photo != 'default_avatar.png' else url_for('static', filename='images/default_avatar.png') }}" 
+        alt="Avatar" 
+        class="profile-large-avatar"
+        id="profileAvatarPreview"
+        onerror="this.src='{{ url_for('static', filename='images/default_avatar.png') }}';"
+      >
+      <div>
+        <label class="form-label">Upload New Passport Photo</label>
+        <input type="file" name="photo" class="form-control" accept="image/*" onchange="previewAvatar(event)">
+        <small style="color: var(--text-muted); font-size: 11px;">Recommended size: Square passport photo (JPG, PNG)</small>
+      </div>
+    </div>
+
+    {% if user_role == 'admin' %}
+      <!-- Admin Fields -->
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Principal / Admin Name *</label>
+          <input type="text" name="principal_name" class="form-control" value="{{ user.principal_name }}" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">College / University Name *</label>
+          <input type="text" name="college_name" class="form-control" value="{{ user.college_name }}" required>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Email Address *</label>
+          <input type="email" name="email" class="form-control" value="{{ user.email }}" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Phone Number *</label>
+          <input type="tel" name="phone" class="form-control" value="{{ user.phone }}" required>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Department</label>
+          <input type="text" name="department" class="form-control" value="{{ user.department or 'Executive Administration' }}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">New Password (leave blank to keep unchanged)</label>
+          <input type="password" name="password" class="form-control" placeholder="Update password">
+        </div>
+      </div>
+
+    {% elif user_role == 'student' %}
+      <!-- Student Fields -->
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Student ID (Cannot be changed)</label>
+          <input type="text" class="form-control" value="{{ user.student_id }}" readonly disabled>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Full Name</label>
+          <input type="text" class="form-control" value="{{ user.name }}" readonly disabled>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Department</label>
+          <input type="text" class="form-control" value="{{ user.department }}" readonly disabled>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Class & Section</label>
+          <input type="text" class="form-control" value="{{ user.year }} ({{ user.semester }} - Sec {{ user.section }})" readonly disabled>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Student Email / Gmail *</label>
+          <input type="email" name="email" class="form-control" value="{{ user.email }}" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Phone Number *</label>
+          <input type="tel" name="phone" class="form-control" value="{{ user.phone }}" required>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Parent Phone Number *</label>
+          <input type="tel" name="parent_phone" class="form-control" value="{{ user.parent_phone }}" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">New Password (leave blank to keep unchanged)</label>
+          <input type="password" name="password" class="form-control" placeholder="Update password">
+        </div>
+      </div>
+    {% endif %}
+
+    <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px;">
+      <button type="submit" class="btn btn-primary btn-lg">
+        Save Profile Changes
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  function previewAvatar(event) {
+    const input = event.target;
+    const preview = document.getElementById('profileAvatarPreview');
+    if (input.files && input.files[0]) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        preview.src = e.target.result;
+      };
+      reader.readAsDataURL(input.files[0]);
+    }
+  }
+</script>
+{% endblock %}

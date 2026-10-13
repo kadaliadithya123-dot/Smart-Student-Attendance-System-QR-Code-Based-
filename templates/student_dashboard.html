@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+
+{% block title %}Student Dashboard - Smart Student Attendance System{% endblock %}
+{% block header_title %}Student Portal{% endblock %}
+{% block header_subtitle %}Your academic profile, attendance percentage, and personalized QR badge{% endblock %}
+
+{% block content %}
+<!-- Student Profile & Status Top Banner -->
+<div class="card">
+  <div class="profile-card-header">
+    <img 
+      src="{{ url_for('static', filename='uploads/' + student.photo) if student.photo != 'default_avatar.png' else url_for('static', filename='images/default_avatar.png') }}" 
+      alt="{{ student.name }}" 
+      class="profile-large-avatar"
+      onerror="this.src='{{ url_for('static', filename='images/default_avatar.png') }}';"
+    >
+    <div style="flex: 1;">
+      <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+        <h2 style="font-size: 22px; font-weight: 800; color: var(--text-main); margin: 0;">{{ student.name }}</h2>
+        <span class="badge badge-primary">{{ student.student_id }}</span>
+        {% if stats.today_status == 'Present' %}
+          <span class="badge badge-success">✓ Present Today ({{ stats.today_time }})</span>
+        {% else %}
+          <span class="badge badge-danger">✗ Not Checked In Today</span>
+        {% endif %}
+      </div>
+      <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-top: 8px; font-size: 13px; color: var(--text-muted);">
+        <div><strong>Department:</strong> {{ student.department }}</div>
+        <div><strong>Academic Year:</strong> {{ student.year }}</div>
+        <div><strong>Semester:</strong> {{ student.semester }}</div>
+        <div><strong>Section:</strong> {{ student.section }}</div>
+      </div>
+    </div>
+
+    <div>
+      <a href="{{ url_for('student.profile') }}" class="btn btn-outline btn-sm">
+        Edit Contact Info
+      </a>
+    </div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 13px;">
+    <div><span style="color: var(--text-muted);">Student Email:</span> <br><strong>{{ student.email }}</strong></div>
+    <div><span style="color: var(--text-muted);">Phone Number:</span> <br><strong>{{ student.phone }}</strong></div>
+    <div><span style="color: var(--text-muted);">Parent Contact:</span> <br><strong>{{ student.parent_phone }}</strong></div>
+    <div><span style="color: var(--text-muted);">Username:</span> <br><strong>{{ student.username }}</strong></div>
+  </div>
+</div>
+
+<!-- Grid with Attendance Metric and Unique QR Code Card -->
+<div class="grid-cols-2">
+  <!-- Left: Attendance Stats Card -->
+  <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+    <div>
+      <div class="card-header">
+        <div>
+          <h3 class="card-title">Attendance Overview</h3>
+          <p class="card-subtitle">Cumulative semester turnout record</p>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 24px;">
+        <div style="padding: 16px; background-color: var(--bg-main); border-radius: var(--radius-sm); border: 1px solid var(--border);">
+          <div style="font-size: 12px; color: var(--text-muted); font-weight: 600;">Days Attended</div>
+          <div style="font-size: 26px; font-weight: 800; color: var(--primary);">{{ stats.attended_days }}</div>
+          <div style="font-size: 11px; color: var(--text-muted);">Verified check-ins</div>
+        </div>
+
+        <div style="padding: 16px; background-color: var(--bg-main); border-radius: var(--radius-sm); border: 1px solid var(--border);">
+          <div style="font-size: 12px; color: var(--text-muted); font-weight: 600;">Active College Days</div>
+          <div style="font-size: 26px; font-weight: 800; color: var(--text-main);">{{ stats.total_days }}</div>
+          <div style="font-size: 11px; color: var(--text-muted);">Recorded college sessions</div>
+        </div>
+      </div>
+
+      <div style="text-align: center; padding: 24px 16px; background: linear-gradient(135deg, #eff6ff 0%, #f8fafc 100%); border-radius: var(--radius-md); border: 1px solid var(--primary-border);">
+        <div style="font-size: 13px; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.5px;">
+          Overall Attendance Rate
+        </div>
+        <div style="font-size: 46px; font-weight: 900; color: {% if stats.percentage >= 75 %}#10b981{% else %}#ef4444{% endif %}; margin: 6px 0;">
+          {{ stats.percentage }}%
+        </div>
+        <p style="font-size: 12px; color: var(--text-muted); margin: 0;">
+          {% if stats.percentage >= 75 %}
+            ✓ You satisfy the required 75% attendance criteria.
+          {% else %}
+            ⚠ Attention: Your attendance is below the 75% college eligibility threshold.
+          {% endif %}
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: Unique Student QR Code Card -->
+  <div class="card qr-display-box" id="qr-section">
+    <div style="width: 100%; text-align: left; margin-bottom: 8px;">
+      <h3 class="card-title">Digital Attendance Badge</h3>
+      <p class="card-subtitle">Present this QR code to your faculty at class entrance</p>
+    </div>
+
+    <img 
+      src="{{ url_for('static', filename='qr_codes/' + student.qr_code) }}" 
+      alt="QR Code for {{ student.student_id }}"
+      class="qr-code-img"
+    >
+
+    <div style="font-weight: 700; font-size: 16px; color: var(--text-main);">
+      {{ student.name }} ({{ student.student_id }})
+    </div>
+    <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 18px;">
+      {{ student.department }} • {{ student.year }} (Sec {{ student.section }})
+    </div>
+
+    <a href="{{ url_for('student.download_qr') }}" class="btn btn-primary" download>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+      Download QR Code (PNG)
+    </a>
+  </div>
+</div>
+
+<!-- Attendance History Table -->
+<div class="card">
+  <div class="card-header">
+    <div>
+      <h3 class="card-title">Attendance History Logs</h3>
+      <p class="card-subtitle">Complete chronological record of all your marked attendances</p>
+    </div>
+  </div>
+
+  <div class="table-container">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Check-in Time</th>
+          <th>Marked By Faculty</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in stats.history %}
+          <tr>
+            <td><strong>{{ row.date }}</strong></td>
+            <td>{{ row.time }}</td>
+            <td>{{ row.faculty_name }}</td>
+            <td><span class="badge badge-success">{{ row.status }}</span></td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 32px;">
+              No attendance records found yet.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

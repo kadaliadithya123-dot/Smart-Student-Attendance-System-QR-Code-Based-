@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In - Smart Student Attendance System</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="login-page">
+
+  <!-- Flash Alerts -->
+  <div class="alert-container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }}">
+            <span>{{ message }}</span>
+            <button class="alert-close" onclick="this.parentElement.remove()">&times;</button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+  </div>
+
+  <div class="login-card">
+    <div class="login-header">
+      <div class="login-logo">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="7" height="7"></rect>
+          <rect x="14" y="3" width="7" height="7"></rect>
+          <rect x="14" y="14" width="7" height="7"></rect>
+          <rect x="3" y="14" width="7" height="7"></rect>
+        </svg>
+      </div>
+      <h1>AttendTrack</h1>
+      <p>Smart Student Attendance System (QR Code Based)</p>
+    </div>
+
+    <!-- Role Selection Tabs -->
+    <div class="role-tabs">
+      <button type="button" class="role-tab {% if selected_role == 'admin' %}active{% endif %}" onclick="selectRole('admin')">
+        Admin
+      </button>
+      <button type="button" class="role-tab {% if selected_role == 'faculty' %}active{% endif %}" onclick="selectRole('faculty')">
+        Faculty
+      </button>
+      <button type="button" class="role-tab {% if selected_role == 'student' %}active{% endif %}" onclick="selectRole('student')">
+        Student
+      </button>
+    </div>
+
+    <div class="login-body">
+      <form action="{{ url_for('auth.login') }}" method="POST">
+        <input type="hidden" name="role" id="roleInput" value="{{ selected_role }}">
+
+        <div class="form-group">
+          <label class="form-label" id="usernameLabel">
+            {% if selected_role == 'student' %}
+              Student Username or Gmail
+            {% elif selected_role == 'faculty' %}
+              Faculty Username
+            {% else %}
+              Admin Username
+            {% endif %}
+          </label>
+          <input 
+            type="text" 
+            name="username" 
+            id="usernameInput" 
+            class="form-control" 
+            placeholder="{% if selected_role == 'student' %}Enter username or student@gmail.com{% else %}Enter username{% endif %}" 
+            required 
+            autofocus
+          >
+        </div>
+
+        <div class="form-group">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <label class="form-label" style="margin-bottom: 0;">Password</label>
+          </div>
+          <input 
+            type="password" 
+            name="password" 
+            id="passwordInput" 
+            class="form-control" 
+            placeholder="Enter password" 
+            required
+          >
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-lg" style="width: 100%; margin-top: 8px;">
+          Sign In as <span id="btnRoleText" style="text-transform: capitalize; margin-left: 4px;">{{ selected_role }}</span>
+        </button>
+      </form>
+
+      <!-- Quick Demo Credentials Box -->
+      <div class="demo-credentials" id="demoCredentialsBox">
+        {% if selected_role == 'admin' %}
+          <strong>Demo Admin Login:</strong><br>
+          Username: <code>admin</code> | Password: <code>admin123</code>
+        {% elif selected_role == 'faculty' %}
+          <strong>Demo Faculty Login:</strong><br>
+          Username: <code>anita_fac</code> | Password: <code>faculty123</code>
+        {% else %}
+          <strong>Demo Student Login:</strong><br>
+          Username: <code>rahul101</code> or <code>rahul.verma@gmail.com</code><br>
+          Password: <code>student123</code>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function selectRole(role) {
+      document.getElementById('roleInput').value = role;
+      
+      // Update tab active state
+      document.querySelectorAll('.role-tab').forEach(tab => {
+        tab.classList.remove('active');
+        if (tab.textContent.trim().toLowerCase() === role) {
+          tab.classList.add('active');
+        }
+      });
+
+      // Update labels & placeholders
+      const label = document.getElementById('usernameLabel');
+      const input = document.getElementById('usernameInput');
+      const btnText = document.getElementById('btnRoleText');
+      const demoBox = document.getElementById('demoCredentialsBox');
+
+      btnText.textContent = role;
+
+      if (role === 'student') {
+        label.textContent = "Student Username or Gmail";
+        input.placeholder = "Enter username or student@gmail.com";
+        demoBox.innerHTML = `<strong>Demo Student Login:</strong><br>Username: <code>rahul101</code> or <code>rahul.verma@gmail.com</code><br>Password: <code>student123</code>`;
+      } else if (role === 'faculty') {
+        label.textContent = "Faculty Username";
+        input.placeholder = "Enter faculty username";
+        demoBox.innerHTML = `<strong>Demo Faculty Login:</strong><br>Username: <code>anita_fac</code> | Password: <code>faculty123</code>`;
+      } else {
+        label.textContent = "Admin Username";
+        input.placeholder = "Enter admin username";
+        demoBox.innerHTML = `<strong>Demo Admin Login:</strong><br>Username: <code>admin</code> | Password: <code>admin123</code>`;
+      }
+    }
+  </script>
+</body>
+</html>

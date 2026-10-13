@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block title %}Register Student - Smart Student Attendance System{% endblock %}
+{% block header_title %}Student Registration{% endblock %}
+{% block header_subtitle %}Enroll new student, configure login credentials, and generate unique QR code{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 900px; margin: 0 auto;">
+  <div class="card-header">
+    <div>
+      <h3 class="card-title">New Student Enrollment Form</h3>
+      <p class="card-subtitle">An individualized QR code and login account will be generated automatically upon submission.</p>
+    </div>
+  </div>
+
+  <form action="{{ url_for('faculty.register_student') }}" method="POST" enctype="multipart/form-data">
+    <!-- Academic Details Section -->
+    <h4 style="font-size: 14px; text-transform: uppercase; color: var(--primary); letter-spacing: 0.5px; margin-bottom: 16px;">
+      1. Academic & Identification Information
+    </h4>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Student ID (Roll / Reg No.) *</label>
+        <input type="text" name="student_id" class="form-control" placeholder="e.g. STU106" required style="text-transform: uppercase;">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Full Name *</label>
+        <input type="text" name="name" class="form-control" placeholder="e.g. Adarsh Sharma" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Department *</label>
+        <select name="department" class="form-control" required>
+          <option value="">Select Department</option>
+          <option value="Computer Science">Computer Science</option>
+          <option value="Electronics & Communication">Electronics & Communication</option>
+          <option value="Mechanical Engineering">Mechanical Engineering</option>
+          <option value="Civil Engineering">Civil Engineering</option>
+          <option value="Information Technology">Information Technology</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Academic Year *</label>
+        <select name="year" class="form-control" required>
+          <option value="1st Year">1st Year</option>
+          <option value="2nd Year">2nd Year</option>
+          <option value="3rd Year">3rd Year</option>
+          <option value="4th Year">4th Year</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Semester *</label>
+        <select name="semester" class="form-control" required>
+          <option value="1st Sem">1st Sem</option>
+          <option value="2nd Sem">2nd Sem</option>
+          <option value="3rd Sem">3rd Sem</option>
+          <option value="4th Sem">4th Sem</option>
+          <option value="5th Sem">5th Sem</option>
+          <option value="6th Sem">6th Sem</option>
+          <option value="7th Sem">7th Sem</option>
+          <option value="8th Sem">8th Sem</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Section *</label>
+        <input type="text" name="section" class="form-control" placeholder="e.g. A, B, C" maxlength="2" required style="text-transform: uppercase;">
+      </div>
+    </div>
+
+    <hr style="border: none; border-top: 1px solid var(--border); margin: 20px 0;">
+
+    <!-- Contact & Credentials Section -->
+    <h4 style="font-size: 14px; text-transform: uppercase; color: var(--primary); letter-spacing: 0.5px; margin-bottom: 16px;">
+      2. Contact & Student Login Credentials
+    </h4>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Student Gmail / Email *</label>
+        <input type="email" name="email" class="form-control" placeholder="student@gmail.com" required>
+        <small style="color: var(--text-muted); font-size: 11px;">Student can use this Gmail to log in.</small>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Student Phone Number *</label>
+        <input type="tel" name="phone" class="form-control" placeholder="+91 9876543210" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Parent Phone Number *</label>
+        <input type="tel" name="parent_phone" class="form-control" placeholder="+91 9876543211" required>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Student Username *</label>
+        <input type="text" name="username" class="form-control" placeholder="e.g. adarsh106" required>
+        <small style="color: var(--text-muted); font-size: 11px;">Unique username for student sign-in</small>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Student Initial Password *</label>
+        <input type="password" name="password" class="form-control" placeholder="Temporary password" required minlength="4">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Passport Size Photo Upload</label>
+        <input type="file" name="photo" id="photoInput" class="form-control" accept="image/*" onchange="previewPhoto(event)">
+        <small style="color: var(--text-muted); font-size: 11px;">PNG, JPG, JPEG (Max 5MB)</small>
+      </div>
+    </div>
+
+    <!-- Live Photo Preview -->
+    <div id="photoPreviewBox" style="display: none; margin-bottom: 20px;">
+      <div style="font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 8px;">Photo Preview:</div>
+      <img id="previewImg" src="#" alt="Preview" style="width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary);">
+    </div>
+
+    <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px;">
+      <a href="{{ url_for('faculty.students') }}" class="btn btn-outline">Cancel</a>
+      <button type="submit" class="btn btn-primary btn-lg">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        Register & Generate QR Code
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  function previewPhoto(event) {
+    const input = event.target;
+    const previewBox = document.getElementById('photoPreviewBox');
+    const previewImg = document.getElementById('previewImg');
+    if (input.files && input.files[0]) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        previewImg.src = e.target.result;
+        previewBox.style.display = 'block';
+      };
+      reader.readAsDataURL(input.files[0]);
+    } else {
+      previewBox.style.display = 'none';
+    }
+  }
+</script>
+{% endblock %}
